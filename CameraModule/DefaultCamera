@@ -1,0 +1,34 @@
+--[[Services]]--
+local ContextActionService = game:GetService("ContextActionService")
+local UserInputService = game:GetService("UserInputService")
+local UserSettingsService = UserSettings():GetService("UserGameSettings")
+
+--[[Constants]]--
+local plr = game.Players.LocalPlayer
+local Mouse = plr:GetMouse()
+local Camera = workspace.CurrentCamera
+local Character = plr.Character or plr.CharacterAdded:Wait()
+local RootPart = Character:WaitForChild("HumanoidRootPart")
+local module = {}
+
+local Controller = require(
+	game.Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")
+):GetControls()
+
+--[[Variables]]--
+
+
+--[[Functions]]--
+function module:Update()
+	
+end
+
+function module:SetUp()
+	Controller:Enable()
+end
+
+function module:Release()
+	
+end
+
+return module
