@@ -1,0 +1,38 @@
+--[[Services]]--
+local RunService = game:GetService("RunService")
+local ContextActionService = game:GetService("ContextActionService")
+
+--[[Constants]]--
+local module = {}
+local CameraTypes = {}
+for i, v in pairs(script:GetChildren()) do
+	if v:IsA("ModuleScript") then
+		CameraTypes[v.Name] = require(v)
+	end
+end
+
+--[[Variables]]--
+module.CameraState = "Default"
+
+--[[Functions]]--
+local function ChangeViews(_, InputState, _)
+	if InputState == Enum.UserInputState.Begin then
+		if module.CameraState == "Combat" then
+			module.ChangeState("InGui")
+		else
+			module.ChangeState("Combat")
+		end
+	end
+end
+
+function module.ChangeState(newState)
+	RunService:UnbindFromRenderStep("Camera")
+	CameraTypes[module.CameraState]:Release()
+	CameraTypes[newState]:SetUp()
+	RunService:BindToRenderStep("Camera", 199, CameraTypes[newState].Update)
+	module.CameraState = newState
+end
+
+ContextActionService:BindAction("ChangeViews", ChangeViews, false, Enum.KeyCode.B)
+
+return module
