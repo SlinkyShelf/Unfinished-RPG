@@ -1,0 +1,68 @@
+--[[Services]]--
+local ContextActionService = game:GetService("ContextActionService")
+local UserInputService = game:GetService("UserInputService")
+local UserSettingsService = UserSettings():GetService("UserGameSettings")
+
+--[[Constants]]--
+local plr = game.Players.LocalPlayer
+local Mouse = plr:GetMouse()
+local Camera = workspace.CurrentCamera
+local Character = plr.Character or plr.CharacterAdded:Wait()
+local RootPart = Character:WaitForChild("HumanoidRootPart")
+local module = {}
+
+local LockCenter = Enum.MouseBehavior.LockCenter
+local Scriptable = Enum.CameraType.Scriptable
+
+local HeadOffset = Vector3.new(0, 2, 0)
+local RootPartOffsetVector = Vector3.new(2, 2, 4)
+local MouseSensitivity = UserSettingsService.MouseSensitivity/100
+
+local MaxY = math.rad(89)
+local MinY = -MaxY
+
+local ZoomIncrement = .25
+local MinZoom = 1
+local MaxZoom = 3
+
+--[[Variables]]--
+local Zoom = 1.5
+local CameraOrientation = {0, 0}
+
+--[[Functions]]--
+local function ZoomUpdate(_, UserInputState, InputObject)
+	Zoom = Zoom + InputObject.Position.Z*ZoomIncrement
+	if Zoom < MinZoom then Zoom = MinZoom end
+	if Zoom > MaxZoom then Zoom = MaxZoom end
+end
+
+function module:Update()
+	Camera.CameraType = Scriptable
+	UserInputService.MouseBehavior = LockCenter
+
+	local MouseDelta = UserInputService:GetMouseDelta()
+	CameraOrientation[1] = CameraOrientation[1] - (MouseDelta.X*MouseSensitivity)
+	CameraOrientation[2] = CameraOrientation[2] - (MouseDelta.Y*MouseSensitivity)
+	if CameraOrientation[2] > MaxY then CameraOrientation[2] = MaxY end
+	if CameraOrientation[2] < MinY then CameraOrientation[2] = MinY end
+
+	RootPart.CFrame = CFrame.fromOrientation(0, CameraOrientation[1], 0)+RootPart.Position
+
+	Camera.CFrame = (CFrame.fromOrientation(CameraOrientation[2], CameraOrientation[1], 0)
+		+RootPart.Position+HeadOffset):ToWorldSpace(
+			CFrame.new(RootPartOffsetVector.X, 0, RootPartOffsetVector.Z*Zoom))
+		+Vector3.new(0, RootPartOffsetVector.Y*Zoom, 0
+		)
+end
+
+function module:SetUp()
+	ContextActionService:BindAction("Zoom", ZoomUpdate, false, Enum.UserInputType.MouseWheel)
+	
+	return 
+end
+
+function module:Release()
+
+end
+
+return module
