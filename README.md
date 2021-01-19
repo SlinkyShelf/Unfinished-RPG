@@ -1,2 +1,2 @@
-# RPG-Code
-Its the code for my game
+# Unfinished-RPG
+This repository is the code for my game
