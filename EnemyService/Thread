@@ -1,0 +1,3 @@
+--This script just requires the script it is parented to
+
+local Module = require(script.Parent)
