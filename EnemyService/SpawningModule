@@ -1,0 +1,47 @@
+--[[Services]]--
+local RunService = game:GetService("RunService")
+
+--[[Constants]]--
+--Objects
+local EnemySpawnPointFolder = workspace.EnemySpawnPoints
+local EnemySpawnPoints = {}
+
+--[[Modules]]--
+local EnemyService --We do this so the modules do not interfier with eachother
+local newEnemy
+spawn(function()
+	EnemyService = require(script.Parent)
+	newEnemy = EnemyService.newEnemy
+end)
+
+--[[Main]]--
+
+for i, v in pairs(EnemySpawnPointFolder:GetChildren()) do
+	print(i)
+	local newPoint = {}
+	newPoint.Enemies = {}
+	newPoint.EnemyNumber = 0
+	newPoint.Position = v.Position
+	newPoint.Type = v.Name
+	newPoint.NextSpawn = 0
+	EnemySpawnPoints[#EnemySpawnPoints+1] = newPoint
+	
+end
+
+local EnemySpawnPointCount = #EnemySpawnPoints
+
+RunService.Heartbeat:Connect(function()
+	local CurrentTick = tick()
+	for i = 1, EnemySpawnPointCount do
+		local EnemySpawnPoint = EnemySpawnPoints[i]
+		if EnemySpawnPoint.NextSpawn < CurrentTick then
+			print("Spawned")
+			EnemySpawnPoint.NextSpawn = CurrentTick + 60
+			
+			local EnemyKey = newEnemy(EnemySpawnPoint.Type, EnemySpawnPoint.Position)
+		end
+		
+	end
+end)
+
+return true
