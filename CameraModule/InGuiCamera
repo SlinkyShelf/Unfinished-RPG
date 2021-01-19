@@ -1,0 +1,45 @@
+--[[Services]]--
+local ContextActionService = game:GetService("ContextActionService")
+local UserInputService = game:GetService("UserInputService")
+local UserSettingsService = UserSettings():GetService("UserGameSettings")
+
+--[[Constants]]--
+local plr = game.Players.LocalPlayer
+local Mouse = plr:GetMouse()
+local Camera = workspace.CurrentCamera
+local Character = plr.Character or plr.CharacterAdded:Wait()
+local RootPart = Character:WaitForChild("HumanoidRootPart")
+local module = {}
+
+local Controller = require(
+	game.Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")
+):GetControls()
+
+local Scriptable = Enum.CameraType.Scriptable
+
+local RootPartOffsetVector = CFrame.new(0, 3, -8)
+local MouseSensitivity = UserSettingsService.MouseSensitivity/100
+
+--[[Variables]]--
+
+
+--[[Functions]]--
+function module:Update()
+	Camera.CameraType = Scriptable
+end
+
+function module:SetUp()
+	UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+	Controller:Disable()
+	Camera.CameraType = Scriptable
+	Camera.CFrame = CFrame.lookAt(
+		RootPart.CFrame:ToWorldSpace(RootPartOffsetVector).Position, 
+		RootPart.Position
+	)
+end
+
+function module:Release()
+	Controller:Enable()
+end
+
+return module
