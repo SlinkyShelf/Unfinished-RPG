@@ -12,67 +12,118 @@ local RootPart = Humanoid.RootPart
 
 local Camera = workspace.CurrentCamera
 
-local RollAnimationObject = game.ReplicatedStorage.Assets.Animations.Player.Roll
-local RollAnim = Humanoid:LoadAnimation(RollAnimationObject)
-
 local Controller = require(
 	game.Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")
 ):GetControls()
 
 local RollTweenInfo = TweenInfo.new(
-	1,
+	.6,
 	Enum.EasingStyle.Quart,
 	Enum.EasingDirection.Out
 )
 
+local BaseWalkSpeed = 100
+local RollDistance = 200
+
+local JumpHeight = 100
+local MaxJumps = 100
+
+--Enums
+local Begin = Enum.UserInputState.Begin
+local AirMaterial = Enum.Material.Air
+
+--Animations
+local Animations = game.ReplicatedStorage.Assets.Animations.Player
+local RollAnimationObject = Instance.new("Animation")
+RollAnimationObject.AnimationId = "http://www.roblox.com/Asset?ID="..Animations.Roll.Value 
+local RollAnim = Humanoid:LoadAnimation(RollAnimationObject)
+
+local IdleAnimObject = Instance.new("Animation")
+IdleAnimObject.AnimationId = "http://www.roblox.com/Asset?ID="..Animations.Idle.Value 
+local IdleAnim = Humanoid:LoadAnimation(IdleAnimObject)
+
+local WalkAnimObject = Instance.new("Animation")
+WalkAnimObject.AnimationId = "http://www.roblox.com/Asset?ID="..Animations.Walk.Value 
+local WalkAnim = Humanoid:LoadAnimation(WalkAnimObject)
+
+local SprintAnimObject = Instance.new("Animation")
+SprintAnimObject.AnimationId = "http://www.roblox.com/Asset?ID="..Animations.Sprint.Value 
+local SprintAnim = Humanoid:LoadAnimation(SprintAnimObject)
+SprintAnim:AdjustSpeed(500)
+
 --[[Variables]]--
+local CurrentAnimation = IdleAnim
+local Rolling = false
 local RootPartPoint = true
-local Direction = {0, 0}
+local MovingX = 0
+local MovingZ = 0
+local JumpsLeft = MaxJumps
 
 --[[Functions]]--
 local function DirectRootPartToMovementDirection()
-		return RootPart.CFrame*CFrame.lookAt(
+	local X, Y, Z = Camera.CFrame:ToOrientation()
+	return CFrame.fromOrientation(0, Y, 0)*CFrame.lookAt(
 			Vector3.new(0, 0, 0),
-			Vector3.new(Direction[1], 0, Direction[2])
+			Vector3.new(MovingX, 0, MovingZ)
 		)
 end
 
+local function Jump(_, UserInputState)
+	if UserInputState == Begin and Humanoid.FloorMaterial == AirMaterial and JumpsLeft > 0 then
+		RootPart.Velocity = Vector3.new(RootPart.Velocity.X, JumpHeight, RootPart.Velocity.Z)
+		JumpsLeft = JumpsLeft - 1
+	end
+end
+
 local function DirectionUpdate(_, UserInputState, InputObject)
-	local newDirection = {0, 0}
-	if UserInputService:IsKeyDown(Enum.KeyCode.W) then newDirection[2] = -1 end
-	if UserInputService:IsKeyDown(Enum.KeyCode.S) then newDirection[2] = newDirection[2]+1 end
-	if UserInputService:IsKeyDown(Enum.KeyCode.D) then newDirection[1] = 1 end
-	if UserInputService:IsKeyDown(Enum.KeyCode.A) then newDirection[1] = newDirection[1]-1 end
-	print(Direction[1], Direction[2])
-	Direction = newDirection
+	local newMovingX = 0
+	local newMovingZ = 0
+	if UserInputService:IsKeyDown(Enum.KeyCode.W) then newMovingZ = -1 end
+	if UserInputService:IsKeyDown(Enum.KeyCode.S) then newMovingZ = newMovingZ end
+	if UserInputService:IsKeyDown(Enum.KeyCode.D) then newMovingX = 1 end
+	if UserInputService:IsKeyDown(Enum.KeyCode.A) then newMovingX = newMovingX-1 end
+	print(MovingX, newMovingZ)
+	MovingX = newMovingX
+	MovingZ = newMovingZ
+	if MovingX == 0 and MovingZ == 0 then
+		CurrentAnimation:Stop()
+		CurrentAnimation = IdleAnim
+		IdleAnim:Play()
+	else
+		CurrentAnimation:Stop()
+		CurrentAnimation = SprintAnim
+		SprintAnim:Play(.5, 1, 1.5)
+	end
 end
 
 local function Roll(_, UserInputState, _)
 	if UserInputState == Enum.UserInputState.Begin then
-		if Humanoid.MoveDirection.Magnitude > 0 then
+		if Humanoid.MoveDirection.Magnitude > 0 and not Rolling then
 			RootPartPoint = false
-			--Controller:Disable()
+			Rolling = true
 			
+			--This Part is not finished
 			
 			local MovementDirection = DirectRootPartToMovementDirection()
 			
-			RootPart.CFrame = MovementDirection
-			RootPart.Anchored = true
+			RootPart.CFrame = MovementDirection+RootPart.Position
 			
-			local RollTween = TweenService:Create(
-				RootPart, 
-				RollTweenInfo, 
-				{
-					["CFrame"] = MovementDirection + MovementDirection.LookVector*10
-				}
-			)
+			--RootPart.Anchored = true
+			--local RollTween = TweenService:Create(
+			--	RootPart, 
+			--	RollTweenInfo, 
+			--	{
+			--		["CFrame"] = MovementDirection + MovementDirection.LookVector*RollDistance
+			--	}
+			--)
+			--RollTween:Play()
 			
-			RollTween:Play()
 			RollAnim:Play()
 			
-			wait(RollTweenInfo.Time) 
-			RootPart.Anchored = false
+			wait(RollTweenInfo.Time-.1) 
+			--RootPart.Anchored = false
 			RootPartPoint = true
+			Rolling = false
 			--Controller:Enable()
 			
 		end
@@ -92,9 +143,20 @@ ContextActionService:BindActionAtPriority(
 	Enum.KeyCode.A
 )
 
+ContextActionService:BindActionAtPriority(
+	"DoubeJump", 
+	Jump, 
+	false,
+	Enum.ContextActionPriority.Low.Value,
+	Enum.KeyCode.Space
+)
+
 RunService:BindToRenderStep("RootPartPoint", 199, function()
-	if RootPartPoint then
-		local X, Y, Z = Camera.CFrame:ToOrientation()
-		RootPart.CFrame = CFrame.fromOrientation(0, Y, 0)+RootPart.Position
+	if Humanoid.FloorMaterial ~= AirMaterial then
+		
+		JumpsLeft = MaxJumps
 	end
 end)
+
+Humanoid.WalkSpeed = BaseWalkSpeed
+IdleAnim:Play()
